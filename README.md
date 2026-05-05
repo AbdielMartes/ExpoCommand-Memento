@@ -5,7 +5,7 @@ Command:
 Memento:
 - Guardar estados de una persona para su posterior uso o reuso. De forma lineal.
 
-El archivo index.ts es en donde se ejecuta el proyecto, y es donde se encuentran
+Los archivos memento.ts y command.ts es en donde se ejecutan y se encuentran
 las implementaciones de cada patrón de diseño.
 
 El lenguaje utilizado utilizado es el siguiente:
