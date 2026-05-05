@@ -1,5 +1,5 @@
-console.log('Happy developing ✨')
 
+// Clase Originadora llamada Persona, que tiene un estado definido por un tipo String
 class Persona {
 
     private estado : string;
@@ -27,6 +27,9 @@ class Persona {
         console.log(`Mi estado actual es: ${this.estado}`);
     }
 
+    // Siendo la clase Originadora de Mementos, puede guardar y restaurar
+    // estados anteriores de sí misma
+
     public guardarEstado() : Memento {
         return new implementacionMemento(this.estado);
     }
@@ -39,6 +42,8 @@ class Persona {
 
 }
 
+// La interface de Memento y su implementación para el guardado de estado de un objeto Persona
+
 interface Memento {
     getEstado() : string;
 
@@ -47,6 +52,8 @@ interface Memento {
     getFecha() : string;
 
 }
+
+
 
 class implementacionMemento implements Memento {
     private estado: string;
@@ -71,6 +78,8 @@ class implementacionMemento implements Memento {
 
 }
 
+// El guardián manda la señal de crear un memento o volver al estado anterior según se deseé
+
 class GuardianDeMemento {
     private mementos : Memento[] = [];
 
@@ -89,7 +98,6 @@ class GuardianDeMemento {
         if (!this.mementos.length) {
             return;
         }
-
         const memento = this.mementos.pop();
 
         // @ts-ignore
@@ -105,6 +113,8 @@ class GuardianDeMemento {
     }
 
 }
+
+// Código de ejecución
 
 const persona = new Persona('Despierto');
 const guardian = new GuardianDeMemento(persona);
