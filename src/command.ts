@@ -59,51 +59,40 @@ class RetiroCommand implements Transaccion {
     }
 }
 
-/**
- * 4. INVOKER (INVOCADOR)
- * El "Cajero Automático" o "App Bancaria".
- * Ejecuta comandos y mantiene un registro de auditoría.
- */
-
-class ProcesadorBancario {
+class ProcesadorBancario {          //INVOKER, aqui se ejecutan los comandos desde los procesos hasta el historial
     private historial: Transaccion[] = [];
 
     public procesar(comando: Transaccion): void {
-        console.log(`\nProcesando transacción del ${comando.timestamp.toISOString()}...`);
+        console.log(`\nProcesando transaccion del ${comando.timestamp.toISOString()}...`);
         comando.execute();
         this.historial.push(comando);
     }
 
     public verAuditoria(): void {
-        console.log("\n--- HISTORIAL DE AUDITORÍA BANCARIA ---");
+        console.log("\n--- HISTORIAL DE AUDITORIA BANCARIA ---");
         this.historial.forEach((t, i) => {
-            const tipo = t instanceof DepositoCommand ? "DEPÓSITO" : "RETIRO";
+            const tipo = t instanceof DepositoCommand ? "DEPOSITO" : "RETIRO";
             console.log(`${i + 1}. [${t.timestamp.toLocaleTimeString()}] ${tipo}`);
         });
         console.log("---------------------------------------");
     }
 }
 
-/**
- * 5. CÓDIGO DEL CLIENTE
- * Donde todo se conecta.
- */
+// RECEIVER, se crea la cuenta del usuario donde se realiza las operaciones
+const miCuenta = new CuentaBancaria("Carlos Martinez", 1000);
 
-// Paso 1: Creamos la cuenta del usuario (Receiver)
-const miCuenta = new CuentaBancaria("Juan Pérez", 1000);
-
-// Paso 2: Creamos el procesador del banco (Invoker)
+// se crea al INVOKER
 const cajeroATM = new ProcesadorBancario();
 
-// Paso 3: Definimos las operaciones (Commands)
+// se llama a los COMMANDS
 const operacion1 = new DepositoCommand(miCuenta, 500);
 const operacion2 = new RetiroCommand(miCuenta, 200);
-const operacion3 = new RetiroCommand(miCuenta, 2000); // Esto fallará por saldo
+const operacion3 = new RetiroCommand(miCuenta, 2000); // ejemplo de error
 
-// Paso 4: El invoker ejecuta las operaciones
+// el INVOKER realiza las operaciones
 cajeroATM.procesar(operacion1);
 cajeroATM.procesar(operacion2);
 cajeroATM.procesar(operacion3);
 
-// Paso 5: Revisamos el historial de lo que pasó
+//muestra el historial
 cajeroATM.verAuditoria();
