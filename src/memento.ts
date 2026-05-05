@@ -1,7 +1,6 @@
 
 // Clase Originadora llamada Persona, que tiene un estado definido por un tipo String
 class Persona {
-
     private estado : string;
 
     constructor(estado : string) {
@@ -31,7 +30,7 @@ class Persona {
     // estados anteriores de sí misma
 
     public guardarEstado() : Memento {
-        return new implementacionMemento(this.estado);
+        return new implementacionMementoPersona(this.estado);
     }
 
     public restaurar(memento: Memento | undefined) : void {
@@ -46,16 +45,12 @@ class Persona {
 
 interface Memento {
     getEstado() : string;
-
     getNombre() : string;
-
     getFecha() : string;
-
 }
 
 
-
-class implementacionMemento implements Memento {
+class implementacionMementoPersona implements Memento {
     private estado: string;
     private fecha: string;
 
@@ -81,8 +76,7 @@ class implementacionMemento implements Memento {
 // El guardián manda la señal de crear un memento o volver al estado anterior según se deseé
 
 class GuardianDeMemento {
-    private mementos : Memento[] = [];
-
+    private listaMementos : Memento[] = [];
     private persona: Persona;
 
     constructor(originador : Persona) {
@@ -91,14 +85,14 @@ class GuardianDeMemento {
 
     public guardarMemento() : void {
         console.log('\nGuardian: Guardando el estado de la persona...');
-        this.mementos.push(this.persona.guardarEstado());
+        this.listaMementos.push(this.persona.guardarEstado());
     }
 
     public deshacer(): void {
-        if (!this.mementos.length) {
+        if (!this.listaMementos.length) {
             return;
         }
-        const memento = this.mementos.pop();
+        const memento = this.listaMementos.pop();
 
         // @ts-ignore
         console.log(`Restaurando el estado de la persona a ${memento.getNombre()} `);
@@ -107,7 +101,7 @@ class GuardianDeMemento {
 
     public mostrarHistorial(): void {
         console.log('\nHistorial de mementos:');
-        for (const memento of this.mementos) {
+        for (const memento of this.listaMementos) {
             console.log(memento.getNombre());
         }
     }
@@ -120,8 +114,6 @@ const persona = new Persona('Despierto');
 const guardian = new GuardianDeMemento(persona);
 
 guardian.guardarMemento();
-
-
 persona.estudiar();
 
 guardian.guardarMemento();
@@ -135,12 +127,12 @@ persona.dejarEstudiar();
 
 guardian.mostrarHistorial();
 
-console.log('\nOtra vez a estudiar\n');
+console.log('\nOtra vez a estudiar');
 guardian.deshacer();
 
-console.log('\nDejare de estudiar\n');
+console.log('\nDejare de estudiar');
 persona.dejarEstudiar();
 
-console.log('\nVoy a dormir mejor\n');
+console.log('\nVoy a dormir mejor');
 persona.dormir();
 
