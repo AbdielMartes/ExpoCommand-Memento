@@ -125,14 +125,20 @@ guardian.deshacer();
 guardian.guardarMemento();
 persona.dejarEstudiar();
 
+guardian.guardarMemento();
 guardian.mostrarHistorial();
 
 console.log('\nOtra vez a estudiar');
-guardian.deshacer();
+persona.estudiar();
+guardian.guardarMemento();
 
 console.log('\nDejare de estudiar');
 persona.dejarEstudiar();
+guardian.guardarMemento();
 
 console.log('\nVoy a dormir mejor');
 persona.dormir();
+guardian.guardarMemento();
+
+guardian.mostrarHistorial();
 
