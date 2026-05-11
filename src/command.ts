@@ -1,10 +1,12 @@
-interface Transaccion { //Define el contrato de las transacciones
-    execute(): void;
+interface Transaccion {
+    nombre: string;
     timestamp: Date;
+    execute(): boolean; // Exito
+    undo(): void;      // Revierte la operacion
 }
 
-class CuentaBancaria {      //RECEIVER
-    private saldo: number;  //Objeto encargado de gestionar el saldo sin saber acerca de los comandos
+class CuentaBancaria { // RECEIVER
+    private saldo: number;
 
     constructor(public titular: string, saldoInicial: number) {
         this.saldo = saldoInicial;
@@ -12,18 +14,16 @@ class CuentaBancaria {      //RECEIVER
 
     public realizarDeposito(monto: number): void {
         this.saldo += monto;
-        console.log(`DEPOSITO: $${monto} enviados a la cuenta de ${this.titular}.`);
-        console.log(`   Saldo actual: $${this.saldo}`);
+        console.log(`[VERIFICADO] DEPOSITO: $${monto}. Saldo actual: $${this.saldo}`);
     }
 
     public realizarRetiro(monto: number): boolean {
         if (monto <= this.saldo) {
             this.saldo -= monto;
-            console.log(`RETIRO: $${monto} entregados.`);
-            console.log(`   Saldo actual: $${this.saldo}`);
+            console.log(`[VERIFICADO] RETIRO: $${monto}. Saldo actual: $${this.saldo}`);
             return true;
         }
-        console.log(`ERROR: Fondos insuficientes para retirar $${monto}.`);
+        console.log(`[ERROR] Fondos insuficientes para retirar $${monto}.`);
         return false;
     }
 
@@ -32,67 +32,93 @@ class CuentaBancaria {      //RECEIVER
     }
 }
 
-//COMMAND: Deposito y retiro
+// COMMAND: Deposito
 class DepositoCommand implements Transaccion {
+    public nombre = "DEPOSITO";
     public timestamp: Date = new Date();
 
-    constructor(
-        private cuenta: CuentaBancaria,
-        private monto: number
-    ) {}
+    constructor(private cuenta: CuentaBancaria, private monto: number) {}
 
-    public execute(): void {
+    public execute(): boolean {
         this.cuenta.realizarDeposito(this.monto);
+        return true;
     }
-}
 
-class RetiroCommand implements Transaccion {
-    public timestamp: Date = new Date();
-
-    constructor(
-        private cuenta: CuentaBancaria,
-        private monto: number
-    ) {}
-
-    public execute(): void {
+    public undo(): void {
+        console.log(`Revirtiendo deposito de $${this.monto}...`);
         this.cuenta.realizarRetiro(this.monto);
     }
 }
 
-class ProcesadorBancario {          //INVOKER, aqui se ejecutan los comandos desde los procesos hasta el historial
-    private historial: Transaccion[] = [];
+// COMMAND: Retiro
+class RetiroCommand implements Transaccion {
+    public nombre = "RETIRO";
+    public timestamp: Date = new Date();
 
-    public procesar(comando: Transaccion): void {
-        console.log(`\nProcesando transaccion del ${comando.timestamp.toISOString()}...`);
-        comando.execute();
-        this.historial.push(comando);
+    constructor(private cuenta: CuentaBancaria, private monto: number) {}
+
+    public execute(): boolean {
+        return this.cuenta.realizarRetiro(this.monto);
     }
 
-    public verAuditoria(): void {
-        console.log("\n--- HISTORIAL DE AUDITORIA BANCARIA ---");
-        this.historial.forEach((t, i) => {
-            const tipo = t instanceof DepositoCommand ? "DEPOSITO" : "RETIRO";
-            console.log(`${i + 1}. [${t.timestamp.toLocaleTimeString()}] ${tipo}`);
-        });
-        console.log("---------------------------------------");
+    public undo(): void {
+        console.log(`Revirtiendo retiro de $${this.monto}...`);
+        this.cuenta.realizarDeposito(this.monto);
     }
 }
 
-// RECEIVER, se crea la cuenta del usuario donde se realiza las operaciones
+class ProcesadorBancario { // INVOKER
+    private historial: Transaccion[] = [];
+
+    public procesar(comando: Transaccion): void {
+        console.log(`\nIniciando ${comando.nombre} - ${comando.timestamp.toISOString()}`);
+
+        const exito = comando.execute();
+
+        if (exito) {
+            this.historial.push(comando);
+        } else {
+            console.log("Transaccion fallida. No se registrara en la auditoría.");
+        }
+    }
+
+    public deshacerUltimaAccion(): void {
+        const comando = this.historial.pop();
+        if (comando) {
+            console.log(`\n--- DESHACIENDO: ${comando.nombre} ---`);
+            comando.undo();
+        } else {
+            console.log("\nNo hay transacciones para deshacer.");
+        }
+    }
+
+    public verAuditoria(): void {
+        console.log("\n--- HISTORIAL DE AUDITORIA ---");
+        if (this.historial.length === 0) console.log("Vacio.");
+        this.historial.forEach((t, i) => {
+            console.log(`${i + 1}. [${t.timestamp.toLocaleTimeString()}] ${t.nombre}`);
+        });
+        console.log("-----------------------------------------------");
+    }
+}
+
 const miCuenta = new CuentaBancaria("Carlos Martinez", 1000);
+const cajero = new ProcesadorBancario();
 
-// se crea al INVOKER
-const cajeroATM = new ProcesadorBancario();
+// 1. Depósito
+cajero.procesar(new DepositoCommand(miCuenta, 500));
 
-// se llama a los COMMANDS
-const operacion1 = new DepositoCommand(miCuenta, 500);
-const operacion2 = new RetiroCommand(miCuenta, 200);
-const operacion3 = new RetiroCommand(miCuenta, 2000); // ejemplo de error
+// 2. Retiro
+cajero.procesar(new RetiroCommand(miCuenta, 200));
 
-// el INVOKER realiza las operaciones
-cajeroATM.procesar(operacion1);
-cajeroATM.procesar(operacion2);
-cajeroATM.procesar(operacion3);
+// 3. Falla
+cajero.procesar(new RetiroCommand(miCuenta, 5000));
 
-//muestra el historial
-cajeroATM.verAuditoria();
+cajero.verAuditoria();
+
+// 4. Ejemplo Deshacer
+cajero.deshacerUltimaAccion();
+
+// Ver estado final
+cajero.verAuditoria();
+console.log(`Saldo final en cuenta: $${miCuenta.consultarSaldo()}`);
